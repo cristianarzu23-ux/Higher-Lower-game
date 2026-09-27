@@ -1,0 +1,121 @@
+name: IT 140 Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  course-repository-check:
+    name: Course repository check
+    if: ${{ github.repository == 'GC-STEM/it140-m4-assignment' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Ruff
+        run: |
+          python -m pip install --disable-pip-version-check "ruff==0.16.3"
+
+      - name: Check repository structure and assignment artifacts
+        run: |
+          python .github/ci/check_repository.py --mode starter
+
+      - name: Compile course-managed Python files
+        run: |
+          python -m py_compile \
+            src/hilow_game.py \
+            tests/test_hilow_game.py \
+            .github/ci/check_repository.py \
+            .github/ci/check_starter.py \
+            .github/ci/check_readme_commands.py
+
+      - name: Run Ruff on course-managed Python files
+        run: |
+          python -m ruff check \
+            src/hilow_game.py \
+            tests/test_hilow_game.py \
+            .github/ci/check_repository.py \
+            .github/ci/check_starter.py \
+            .github/ci/check_readme_commands.py \
+            --ignore F401 \
+            --output-format=github
+
+      - name: Validate course starter
+        run: |
+          python .github/ci/check_starter.py
+
+      - name: Write course repository summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          echo "## IT 140 Module Four course repository check" \
+            >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This job protects the graded pseudocode starter, the" \
+            "provided Draw.io reference, documentation, and optional" \
+            "practice scaffolding." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "D2L Brightspace remains the assignment submission and" \
+            "grading system." >> "$GITHUB_STEP_SUMMARY"
+
+  student-assignment-check:
+    name: Assignment artifact check
+    if: >-
+      ${{ github.repository != 'GC-STEM/it140-m4-assignment' &&
+          github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Check assignment repository
+        run: |
+          python .github/ci/check_repository.py --mode student
+
+      - name: Write student summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          echo "## Module Four assignment artifact check" \
+            >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This check provides formative feedback about the graded" \
+            "pseudocode and protected repository files." \
+            >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "A brand-new personal repository is not treated as an error" \
+            "simply because the pseudocode is still in the starter state." \
+            >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "The optional Python program and optional practice tests are" \
+            "not required by this student check." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "A green check is not a grade and does not submit the assignment." \
+            >> "$GITHUB_STEP_SUMMARY"
