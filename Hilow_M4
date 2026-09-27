@@ -1,0 +1,22 @@
+HILOW\PSEUDOCDE
+Initialize program.
+Request user’s name. 
+  - print “Welcome to the Higher/Lower game, user_name!”
+Obtain the game boundaries from the user:
+  Print “Enter the lower bound: “
+  -  “Enter the upper bound: “
+Generate a random target number between lower_bnd and upper_bnd
+  -	target_num = generate_random (lower_bnd, upper_bnd)
+Print “Great, now guess a number between “ lower_bnd + upper_bnd: 
+  -	print “user_guess”
+create a loop until user guesses the correct number.
+  -	While user_guess != target_num
+    ~ if user_guess < target_num:
+        Print “Nope too low”
+    ~ else:
+        Print “Nope too high”
+Ask for another guess inside the loop.
+  -	Print “Guess another number: “
+When user_guess = target_num:
+  -	Print “You got it!”
+End.
